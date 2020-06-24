@@ -12,3 +12,4 @@ cocos2dx action 移植到unity
 1. 添加更多的变速action  
 2. 添加常用的缓动action  
 3. 完善readme  
+4. 部分action用到gameObject.SetActive有gc，需要优化
