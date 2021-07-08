@@ -32,6 +32,24 @@ namespace UnityEngine
             return action;
         }
 
-
+        /// <summary>
+        /// 闪烁
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <param name="duration">时间</param>
+        /// <param name="time">闪烁次数</param>
+        /// <returns></returns>
+        public static IFiniteTimeAction CCBlink(this GameObject obj,float duration,uint time)
+        {
+            float oneTime = duration / time;
+            var action = CCActionSequence.Create(
+                obj.CCHide(),
+                CCActionDelay.Create(oneTime*0.5f),
+                obj.CCShow(),
+                CCActionDelay.Create(oneTime*0.5f)
+            );
+            var repectAction = CCActionRepeat.Create(action, time);
+            return repectAction;
+        }
     }
 }

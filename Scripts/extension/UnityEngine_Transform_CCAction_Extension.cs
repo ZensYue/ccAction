@@ -137,8 +137,35 @@ namespace UnityEngine
             return action;
         }
 
+
+        /// <summary>
+		/// 椭圆运动 
+		/// VecA与VecB垂直
+		/// a和b相等，2D就是一个圆，3D就是一个球
+		/// </summary>
+		/// <param name="centerPos">中心点</param>
+		/// <param name="vecA">向量A，如果是2D，可以当做x或者y轴，与向量B垂直</param>
+		/// <param name="VecB">向量B，如果是2D，可以当做x或者y轴，与向量A垂直</param>
+		/// <param name="a">向量A长度</param>
+		/// <param name="b">向量B长度</param>
+		/// <param name="t"></param>
+		/// <returns>IFiniteTimeAction</returns>
         public static IFiniteTimeAction CCEllipse(this Transform obj, float duration, Vector3 centerPos, Vector3 vecA, Vector3 vecB, float a, float b,float startp=0,float endp = 1, bool relativeWorld = false)
         {
+#if UNITY_EDITOR
+            if(vecA == Vector3.zero) 
+                CCLog.LogError("vecA is zero");
+            if(vecB == Vector3.zero) 
+                CCLog.LogError("vecB is zero");
+
+            if ((vecA.x * vecB.x + vecA.y * vecB.y + vecA.z * vecB.z) != 0)
+            {
+                CCLog.LogError("vecA X vecA != 0");
+            }
+#endif
+            vecA.Normalize();
+            vecB.Normalize();
+
             Vector3 p1 = relativeWorld ? obj.position : obj.localPosition;
             var action = CCActionFloat.Create(duration, startp, endp);
             action.SetUpdate((t, result) => {
@@ -147,6 +174,21 @@ namespace UnityEngine
                 else obj.localPosition = pos;
             });
             return action;
+        }
+
+        /// <summary>
+		/// 椭圆运动 2D
+		/// VecA与VecB垂直
+		/// a和b相等，2D就是一个圆，3D就是一个球
+		/// </summary>
+		/// <param name="centerPos">中心点</param>
+		/// <param name="a">向量A长度 x轴</param>
+		/// <param name="b">向量B长度 y轴</param>
+		/// <param name="t"></param>
+		/// <returns>IFiniteTimeAction</returns>
+        public static IFiniteTimeAction CCEllipse2D(this Transform obj, float duration, Vector2 centerPos, float a, float b, float startp = 0, float endp = 1, bool relativeWorld = false)
+        {
+            return obj.CCEllipse(duration, centerPos, new Vector3(1,0,0), new Vector3(0,1,0), a, b, startp, endp, relativeWorld);
         }
     }
 }

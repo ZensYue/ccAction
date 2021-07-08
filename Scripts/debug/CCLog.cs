@@ -9,22 +9,41 @@ namespace ccAction
 		public static void Log(this object obj,string message = "")
 		{
 #if UNITY_EDITOR
-			Debug.LogWarning($"{GetLogTag(obj)},message = {message}");
+			Debug.LogWarning($"[CCLog]{GetLogTag(obj)},message = {message}");
 #else
-			Debug.Log($"message = {message}");
+			Debug.Log($"[CCLog]message = {message}");
 #endif
-		}
+        }
+        public static void Log(string message = "")
+        {
+#if UNITY_EDITOR
+            Debug.LogWarning($"[CCLog]message = {message}");
+#else
+			Debug.Log($"[CCLog]message = {message}");
+#endif
+        }
 
-		public static void LogError(this object obj, string message = "")
+
+        public static void LogError(this object obj, string message = "")
 		{
 #if UNITY_EDITOR
-			throw new ArgumentNullException($"{GetLogTag(obj)},message = {message}");
+			throw new ArgumentException($"[CCLog]{GetLogTag(obj)},message = {message}");
 #else
-			Debug.LogWarning($"message = {message}");
+			Debug.LogWarning($"[CCLog]message = {message}");
 #endif
-		}
+        }
 
-		private static string GetLogTag(object obj)
+        public static void LogError(string message)
+        {
+#if UNITY_EDITOR
+            throw new ArgumentException($"[CCLog]message = {message}");
+#else
+			Debug.LogWarning($"[CCLog]message = {message}");
+#endif
+        }
+
+
+        private static string GetLogTag(object obj)
 		{
 			return obj.GetType().Name;
 		}
