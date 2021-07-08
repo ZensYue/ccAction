@@ -5,6 +5,7 @@ using UnityEngine.UI;
 using ccAction;
 using System.Reflection;
 using UnityEngine.Events;
+using System;
 
 public class TestReflection
 {
@@ -12,26 +13,25 @@ public class TestReflection
 }
 
 public class ActionTest : MonoBehaviour {
-	public Image image;
+
+    [Tooltip("测试单次缓动时间")]
+    public float duration = 1.0f;
+
+
+    public Image image;
 	public Image image2;
 	public Text text;
 	public Outline outline;
 
     public GameObject buttonCon;
-
     Button[] buttons;
-
-	public int reflection_count = 100;
-
-	int m_count = 0;
-
 	void Start () {
 		image = transform.Find("image").GetComponent<Image>();
 		image2 = transform.Find("image_2").GetComponent<Image>();
 		text = transform.Find("txt").GetComponent<Text>();
 		outline = transform.Find("txt").GetComponent<Outline>();
 
-		Reset();
+		Reset(true);
 
 
         buttons = new Button[buttonCon.transform.childCount];
@@ -61,9 +61,25 @@ public class ActionTest : MonoBehaviour {
         AddButtonClick(17, OnClick18);
         AddButtonClick(18, OnClick19);
         AddButtonClick(19, OnClick20);
+
+        var button = buttons[buttonCon.transform.childCount-1];
+        if(button)
+        {
+            SetButtonText(button, "执行全部");
+            Color color;
+            if(ColorUtility.TryParseHtmlString("#E26A00",out color))
+            {
+                button.GetComponent<Image>().color = color;
+            }
+            button.onClick.AddListener(() => {
+                Reset(true);
+                ActionInterval action = GetAllActions(buttonCon.transform.childCount-1);
+                CCAction.Do(action, transform);
+            });
+        }
     }
 
-    public void AddButtonClick(uint index, System.Action<Button> action)
+    public void AddButtonClick(uint index, Func<ActionInterval> func)
     {
         if(index>= buttons.Length)
         {
@@ -72,16 +88,21 @@ public class ActionTest : MonoBehaviour {
         }
         var button = buttons[index];
         button.onClick.AddListener(()=> {
-            Reset();
-            action.Invoke(button);
+            Reset(true);
+            ActionInterval action = func();
+            CCAction.Do(action, transform);
         });
     }
 
 	
-	void Reset()
+	void Reset(bool clearAction = false)
 	{
-		text.text = "点击按钮测试";
-		CCActionManager.Instance.RemoveAllActionsFromTarget(transform);
+        if(clearAction)
+        {
+            text.text = "点击按钮测试";
+            CCActionManager.Instance.RemoveAllActionsFromTarget(transform);
+        }
+		
 		image.transform.localPosition = Vector3.zero;
 		image.transform.localScale = new Vector3(1.0f, 1.0f, 1.0f);
 		image.transform.localRotation = new Quaternion(0, 0, 0, 0);
@@ -89,13 +110,15 @@ public class ActionTest : MonoBehaviour {
 
 
         image2.transform.localPosition = new Vector3(0, -100, 0);
+        image2.gameObject.SetActive(false);
 
-		//text.transform.localPosition = new Vector3(0, 77, 0);
-		//text.transform.localScale = new Vector3(1.0f, 1.0f, 1.0f);
-		//text.transform.localRotation = new Quaternion(0, 0, 0, 0);
-		//text.color = new Color(1f, 1f, 1f, 1f);
 
-		outline.effectColor = new Color(0f, 0f, 0f, 1.0f);
+        //text.transform.localPosition = new Vector3(0, 77, 0);
+        //text.transform.localScale = new Vector3(1.0f, 1.0f, 1.0f);
+        //text.transform.localRotation = new Quaternion(0, 0, 0, 0);
+        //text.color = new Color(1f, 1f, 1f, 1f);
+
+        outline.effectColor = new Color(0f, 0f, 0f, 1.0f);
 	}
 
     void SetTile(string title)
@@ -112,191 +135,485 @@ public class ActionTest : MonoBehaviour {
         btnText.text = txt;
     }
 
-    void OnClick1(Button button)
+    ActionInterval GetAllActions(int count)
     {
-        SetTile("移动返回");
-        var action = CCActionSequence.Create(
-            image.transform.CCMoveTo(1f, new Vector3(200, 100, 0)),
-            image.transform.CCMoveTo(1f, new Vector3(0, 0, 0)),
-            CCActionDelay.Create(0f)
-        );
-        CCActionManager.Instance.AddAction(action, transform);
+        ActionInterval action = null;
+        for (int i = 0; i < count; i++)
+        {
+            Type tp = typeof(ActionTest);
+            var methodInfo = tp.GetMethod($"OnClick{i + 1}");
+            object o = methodInfo.Invoke(this, new System.Object[] { });
+            if (o == null)
+                break;
+            var action2 = o as ActionInterval;
+            if (action == null)
+                action = action2;
+            else
+                action = CCAction.CCSequence(action, action2);
+        }
+        return action;
     }
 
-    void OnClick2(Button button)
+
+    public ActionInterval OnClick1()
     {
-        SetTile("缩放3倍再缩放到1倍");
         var action = CCActionSequence.Create(
-            image.transform.CCScaleTo(1f, new Vector3(3, 3, 3)),
-            image.transform.CCScaleTo(1f, new Vector3(1, 1, 1)),
+            CCAction.CCDelay(0, () => { Reset(); SetTile("移动返回");}),
+            image.transform.CCMoveTo(duration*0.5f, new Vector3(200, 100, 0)),
+            image.transform.CCMoveTo(duration*0.5f, new Vector3(0, 0, 0)),
             CCActionDelay.Create(0f)
         );
-        CCActionManager.Instance.AddAction(action, transform);
+        return action;
     }
 
-    void OnClick3(Button button)
+    public ActionInterval OnClick2()
     {
-        SetTile("旋转");
         var action = CCActionSequence.Create(
-            image.transform.CCAnglesTo(1f, new Vector3(0, 180, 0)),
-            image.transform.CCAnglesTo(1f, new Vector3(0,360,0)),
+            CCAction.CCDelay(0, () => { Reset(); SetTile("缩放3倍再缩放到1倍");}),
+            image.transform.CCScaleTo(duration*0.5f, new Vector3(3, 3, 3)),
+            image.transform.CCScaleTo(duration*0.5f, new Vector3(1, 1, 1)),
             CCActionDelay.Create(0f)
         );
-        CCActionManager.Instance.AddAction(action, transform);
+        return action;
     }
 
-    void OnClick4(Button button)
+    public ActionInterval OnClick3()
     {
-        SetTile("二阶贝塞尔");
         var action = CCActionSequence.Create(
-            image.transform.CCQuadBezierTo(2.0f, new Vector3(-200, 100, 0), new Vector3(400, 300, 0)),
-            image.transform.CCMoveTo(1f, new Vector3(0, 0, 0)),
+            CCAction.CCDelay(0, () => { Reset(); SetTile("旋转");}),
+            image.transform.CCAnglesTo(duration*0.3f, new Vector3(0, 0, 180)),
+            image.transform.CCAnglesTo(duration*0.3f, new Vector3(0, 0, 360)),
             CCActionDelay.Create(0f)
         );
-        CCActionManager.Instance.AddAction(action, transform);
+        return action;
     }
 
-    void OnClick5(Button button)
+    public ActionInterval OnClick4()
     {
-        SetTile("三阶贝塞尔");
         var action = CCActionSequence.Create(
-            image.transform.CCCubicBezierTo(2.0f, new Vector3(-200, 100, 0), new Vector3(600, -300, 0), new Vector3(400, 300, 0)),
-            image.transform.CCMoveTo(1f, new Vector3(0, 0, 0)),
+            CCAction.CCDelay(0, () => { Reset(); SetTile("二阶贝塞尔");}),
+            image.transform.CCQuadBezierTo(duration*2, new Vector3(-200, 100, 0), new Vector3(400, 300, 0)),
+            CCActionDelay.Create(.1f),
+            image.transform.CCMoveTo(duration*0.3f, new Vector3(0, 0, 0)),
             CCActionDelay.Create(0f)
         );
-        CCActionManager.Instance.AddAction(action, transform);
+        return action;
     }
 
-    void OnClick6(Button button)
+    public ActionInterval OnClick5()
     {
-        SetTile("椭圆运动1.5圈,复位");
         var action = CCActionSequence.Create(
-            image.transform.CCEllipse2D(3.0f, new Vector3(0, 0, 0), 250, 100,0,1.5f),
-            image.transform.CCMoveTo(1f, new Vector3(0, 0, 0)),
+            CCAction.CCDelay(0, () => { Reset(); SetTile("三阶贝塞尔");}),
+            image.transform.CCCubicBezierTo(duration*2, new Vector3(-200, 100, 0), new Vector3(600, -300, 0), new Vector3(400, 300, 0)),
+            CCActionDelay.Create(0.1f),
+            image.transform.CCMoveTo(duration*0.3f, new Vector3(0, 0, 0)),
             CCActionDelay.Create(0f)
         );
-        CCActionManager.Instance.AddAction(action, transform);
+        return action;
     }
 
-    void OnClick7(Button button)
+    public ActionInterval OnClick6()
     {
-        SetTile("移动重复3次");
         var action = CCActionSequence.Create(
-            image.transform.CCMoveTo(1f, new Vector3(200, 100, 0)),
-            image.transform.CCMoveTo(1f, new Vector3(0, 0, 0)),
+            CCAction.CCDelay(0, () => { Reset(); SetTile("椭圆运动1.5圈,复位");}),
+            image.transform.CCEllipse2D(duration*2, new Vector3(0, 0, 0), 180, 50,0,1.5f),
+            CCActionDelay.Create(0.1f),
+            image.transform.CCMoveTo(duration*0.3f, new Vector3(0, 0, 0)),
             CCActionDelay.Create(0f)
         );
-        var repectAction = CCActionRepeat.Create(action,3);
-        CCActionManager.Instance.AddAction(repectAction, transform);
+        return action;
     }
 
-    void OnClick8(Button button)
+    public ActionInterval OnClick7()
     {
-        SetTile("移动缩放并行");
+        var action = CCActionSequence.Create(
+            CCAction.CCDelay(0, () => { Reset(); SetTile("重复测试：移动重复3次");}),
+            image.transform.CCMoveTo(duration*0.7f, new Vector3(200, 100, 0)),
+            image.transform.CCMoveTo(duration*0.7f, new Vector3(0, 0, 0)),
+            CCActionDelay.Create(0f)
+        );
+        return CCAction.CCRepeat(action, 3);
+    }
+
+    public ActionInterval OnClick8()
+    {
         var action1 = CCActionSequence.Create(
-            image.transform.CCMoveTo(1f, new Vector3(200, 100, 0)),
-            image.transform.CCMoveTo(1f, new Vector3(0, 0, 0)),
+            CCAction.CCDelay(0, () => { Reset(); SetTile("并行测试：移动缩放");}),
+            image.transform.CCMoveTo(duration, new Vector3(200, 100, 0)),
+            image.transform.CCMoveTo(duration, new Vector3(0, 0, 0)),
             CCActionDelay.Create(0f)
         );
         var action2 = CCActionSequence.Create(
-            image.transform.CCScaleTo(1f, new Vector3(2, 2, 2)),
-            image.transform.CCScaleTo(1f, new Vector3(1, 1, 1)),
+            image.transform.CCScaleTo(duration, new Vector3(2, 2, 2)),
+            image.transform.CCScaleTo(duration, new Vector3(1, 1, 1)),
             CCActionDelay.Create(0f)
         );
         var action = CCActionSpawn.Create(action1, action2);
-        CCActionManager.Instance.AddAction(action, transform);
+
+        return action;
     }
 
-    void OnClick9(Button button)
+    public ActionInterval OnClick9()
     {
-        SetTile("闪烁1秒5次");
-        CCActionManager.Instance.AddAction(image.gameObject.CCBlink(1.0f,5), transform);
+        return CCAction.CCSequence(
+            CCAction.CCDelay(0, () => { Reset(); SetTile("闪烁5次");}),
+            image.gameObject.CCBlink(duration, 5));
     }
 
-    void OnClick10(Button button)
+    public ActionInterval OnClick10()
     {
-        SetTile("fillAmount");
         var action = CCActionSequence.Create(
-            image.CCFillAmout(1.0f,0),
-            CCActionDelay.Create(0.5f),
-            image.CCFillAmout(1.0f,1),
+            CCAction.CCDelay(0, () => { Reset(); SetTile("进度条");}),
+            image.CCFillAmout(duration*0.7f, 0),
+            CCActionDelay.Create(0.1f),
+            image.CCFillAmout(duration*0.7f, 1),
             CCActionDelay.Create(0f)
         );
-        CCActionManager.Instance.AddAction(action, transform);
+        return action;
     }
 
-    void OnClick11(Button button)
+    public ActionInterval OnClick11()
     {
-        SetTile("变色、淡入、淡出");
         var action = CCActionSequence.Create(
-            image.CCColorTo(1.0f, Color.green),
-            CCActionDelay.Create(0.5f),
-            image.CCColorTo(1.0f, Color.white),
-            CCActionDelay.Create(0.5f),
-            image.CCFadeIn(1.0f),
-            image.CCFadeOut(1.0f),
+            CCAction.CCDelay(0, () => { Reset(); SetTile("变色、淡入、淡出");}),
+            image.CCColorTo(duration*0.5f, Color.red),
+            CCActionDelay.Create(0.1f),
+            image.CCColorTo(duration*0.5f, Color.white),
+            CCActionDelay.Create(0.1f),
+            image.CCFadeOut(duration*0.5f),
+            image.CCFadeIn(duration*0.5f),
             CCActionDelay.Create(0f)
         );
-        CCActionManager.Instance.AddAction(action, transform);
+        return action;
 
     }
-    void OnClick12(Button button)
+    public ActionInterval OnClick12()
     {
-        SetTile("跳数字");
         var action = CCActionSequence.Create(
-            CCActionDelay.Create(0.5f),
+            CCAction.CCDelay(0, () => { Reset(); SetTile("跳数字");}),
+            CCActionDelay.Create(0.2f),
             text.CCNumberTo(1.0f, "数字跳动，0-100，当前：{0:F2}",0,100, "数字跳动，0-100，当前：{0:F0}"),
             CCActionDelay.Create(0f)
         );
-        CCActionManager.Instance.AddAction(action, transform);
+        return action;
     }
-    void OnClick13(Button button)
+    public ActionInterval OnClick13()
     {
-        SetTile("打印机");
+        
         var action = CCActionSequence.Create(
-            CCActionDelay.Create(0.5f),
-            text.CCTextPrint(1.0f,"0123456789零一二三四五六七八九"),
+            CCAction.CCDelay(0, () => { Reset(); SetTile("打印机");}),
+            CCActionDelay.Create(0.2f),
+            text.CCTextPrint(1.0f,"打印机：0123456789零一二三四五六七八九"),
             CCActionDelay.Create(0f)
         );
-        CCActionManager.Instance.AddAction(action, transform);
+        return action;
 
     }
-    void OnClick14(Button button)
+    public ActionInterval OnClick14()
     {
-        SetTile("未完待续");
+        
+        var action = CCActionSequence.Create(
+            CCAction.CCDelay(0, () => { Reset(); SetTile("变速Ease");}),
+            image2.gameObject.CCShow(),
+            CCAction.CCDelay(0, () => { SetTile("变速EaseIn 上图先慢后快，下图正常"); }),
+            CCAction.CCSpawn(
+                CCAction.CCEaseIn(image.transform.CCMoveTo(duration*0.5f, new Vector3(200, 0, 0)),2),
+                image2.transform.CCMoveTo(duration * 0.5f, new Vector3(200, -100, 0)),
+                CCActionDelay.Create(0f)
+            ),
+            CCActionDelay.Create(0.1f),
+            CCAction.CCSpawn(
+                CCAction.CCEaseIn(image.transform.CCMoveTo(duration * 0.5f, new Vector3(0, 0, 0)), 2),
+                image2.transform.CCMoveTo(duration * 0.5f, new Vector3(0, -100, 0)),
+                CCActionDelay.Create(0f)
+            ),
+
+            CCAction.CCDelay(0.1f, () => { SetTile("变速EaseOut 上图先快后慢，下图正常"); }),
+            CCAction.CCSpawn(
+                CCAction.CCEaseOut(image.transform.CCMoveTo(duration * 0.5f, new Vector3(200, 0, 0)), 2),
+                image2.transform.CCMoveTo(duration * 0.5f, new Vector3(200, -100, 0)),
+                CCActionDelay.Create(0f)
+            ),
+            CCActionDelay.Create(0.1f),
+            CCAction.CCSpawn(
+                CCAction.CCEaseOut(image.transform.CCMoveTo(duration * 0.5f, new Vector3(0, 0, 0)), 2),
+                image2.transform.CCMoveTo(duration * 0.5f, new Vector3(0, -100, 0)),
+                CCActionDelay.Create(0f)
+            ),
+
+            CCAction.CCDelay(0.1f, () => { SetTile("变速EaseInOut 上图前后慢中间快，下图正常"); }),
+            CCAction.CCSpawn(
+                CCAction.CCEaseInOut(image.transform.CCMoveTo(duration * 0.5f, new Vector3(200, 0, 0)), 2),
+                image2.transform.CCMoveTo(duration * 0.5f, new Vector3(200, -100, 0)),
+                CCActionDelay.Create(0f)
+            ),
+            CCActionDelay.Create(0.1f),
+            CCAction.CCSpawn(
+                CCAction.CCEaseInOut(image.transform.CCMoveTo(duration * 0.5f, new Vector3(0, 0, 0)), 2),
+                image2.transform.CCMoveTo(duration * 0.5f, new Vector3(0, -100, 0)),
+                CCActionDelay.Create(0f)
+            ),
+            CCActionDelay.Create(0f)
+        );
+        return action;
     }
-    void OnClick15(Button button)
+    public ActionInterval OnClick15()
     {
-        SetTile("未完待续");
+        
+        var action = CCActionSequence.Create(
+            CCAction.CCDelay(0, () => { Reset(); SetTile("变速Elastic");}),
+            image2.gameObject.CCShow(),
+            CCAction.CCDelay(0, () => { SetTile("变速ElasticIn 上图先慢后快，下图正常"); }),
+            CCAction.CCSpawn(
+                CCAction.CCElasticEaseIn(image.transform.CCMoveTo(duration * 0.5f, new Vector3(200, 0, 0)), 10),
+                image2.transform.CCMoveTo(duration * 0.5f, new Vector3(200, -100, 0)),
+                CCActionDelay.Create(0f)
+            ),
+            CCActionDelay.Create(0.1f),
+            CCAction.CCSpawn(
+                CCAction.CCElasticEaseIn(image.transform.CCMoveTo(duration * 0.5f, new Vector3(0, 0, 0)), 10),
+                image2.transform.CCMoveTo(duration * 0.5f, new Vector3(0, -100, 0)),
+                CCActionDelay.Create(0f)
+            ),
+
+            CCAction.CCDelay(0.1f, () => { SetTile("变速ElasticOut 上图先快后慢，下图正常"); }),
+            CCAction.CCSpawn(
+                CCAction.CCElasticEaseOut(image.transform.CCMoveTo(duration * 0.5f, new Vector3(200, 0, 0)), 10),
+                image2.transform.CCMoveTo(duration * 0.5f, new Vector3(200, -100, 0)),
+                CCActionDelay.Create(0f)
+            ),
+            CCActionDelay.Create(0.1f),
+            CCAction.CCSpawn(
+                CCAction.CCElasticEaseOut(image.transform.CCMoveTo(duration * 0.5f, new Vector3(0, 0, 0)), 10),
+                image2.transform.CCMoveTo(duration * 0.5f, new Vector3(0, -100, 0)),
+                CCActionDelay.Create(0f)
+            ),
+
+            CCAction.CCDelay(0.1f, () => { SetTile("变速ElasticInOut 上图前后慢中间快，下图正常"); }),
+            CCAction.CCSpawn(
+                CCAction.CCElasticEaseInOut(image.transform.CCMoveTo(duration * 0.5f, new Vector3(200, 0, 0)), 10),
+                image2.transform.CCMoveTo(duration * 0.5f, new Vector3(200, -100, 0)),
+                CCActionDelay.Create(0f)
+            ),
+            CCActionDelay.Create(0.1f),
+            CCAction.CCSpawn(
+                CCAction.CCElasticEaseInOut(image.transform.CCMoveTo(duration * 0.5f, new Vector3(0, 0, 0)), 10),
+                image2.transform.CCMoveTo(duration * 0.5f, new Vector3(0, -100, 0)),
+                CCActionDelay.Create(0f)
+            ),
+            CCAction.CCDelay(0, () => { SetTile("完成"); }),
+            CCActionDelay.Create(0f)
+        );
+        return action;
 
     }
 
-    void OnClick16(Button button)
+    public ActionInterval OnClick16()
     {
-        SetTile("未完待续");
+        
+        var action = CCActionSequence.Create(
+            CCAction.CCDelay(0, () => { Reset(); SetTile("变速Quart");}),
+            image2.gameObject.CCShow(),
+            CCAction.CCDelay(0, () => { SetTile("变速QuartIn 上图先慢后快，下图正常"); }),
+            CCAction.CCSpawn(
+                CCAction.CCQuartEaseIn(image.transform.CCMoveTo(duration * 0.5f, new Vector3(200, 0, 0))),
+                image2.transform.CCMoveTo(duration * 0.5f, new Vector3(200, -100, 0)),
+                CCActionDelay.Create(0f)
+            ),
+            CCActionDelay.Create(0.1f),
+            CCAction.CCSpawn(
+                CCAction.CCQuartEaseIn(image.transform.CCMoveTo(duration * 0.5f, new Vector3(0, 0, 0))),
+                image2.transform.CCMoveTo(duration * 0.5f, new Vector3(0, -100, 0)),
+                CCActionDelay.Create(0f)
+            ),
+
+            CCAction.CCDelay(0.1f, () => { SetTile("变速QuartOut 上图先快后慢，下图正常"); }),
+            CCAction.CCSpawn(
+                CCAction.CCQuartEaseOut(image.transform.CCMoveTo(duration * 0.5f, new Vector3(200, 0, 0))),
+                image2.transform.CCMoveTo(duration * 0.5f, new Vector3(200, -100, 0)),
+                CCActionDelay.Create(0f)
+            ),
+            CCActionDelay.Create(0.1f),
+            CCAction.CCSpawn(
+                CCAction.CCQuartEaseOut(image.transform.CCMoveTo(duration * 0.5f, new Vector3(0, 0, 0))),
+                image2.transform.CCMoveTo(duration * 0.5f, new Vector3(0, -100, 0)),
+                CCActionDelay.Create(0f)
+            ),
+
+            CCAction.CCDelay(0.1f, () => { SetTile("变速QuartInOut 上图前后慢中间快，下图正常"); }),
+            CCAction.CCSpawn(
+                CCAction.CCBounceEaseInOut(image.transform.CCMoveTo(duration, new Vector3(200, 0, 0))),
+                image2.transform.CCMoveTo(duration, new Vector3(200, -100, 0)),
+                CCActionDelay.Create(0f)
+            ),
+            CCActionDelay.Create(0.1f),
+            CCAction.CCSpawn(
+                CCAction.CCBounceEaseInOut(image.transform.CCMoveTo(duration * 0.5f, new Vector3(0, 0, 0))),
+                image2.transform.CCMoveTo(duration * 0.5f, new Vector3(0, -100, 0)),
+                CCActionDelay.Create(0f)
+            ),
+            CCAction.CCDelay(0, () => { SetTile("完成"); }),
+            CCActionDelay.Create(0f)
+        );
+        return action;
 
     }
-    void OnClick17(Button button)
+    public ActionInterval OnClick17()
     {
-        SetTile("未完待续");
+        
+        var action = CCActionSequence.Create(
+            CCAction.CCDelay(0, () => { Reset(); SetTile("变速Bounce");}),
+            image2.gameObject.CCShow(),
+            CCAction.CCDelay(0, () => { SetTile("变速BounceIn 上图先慢后快，下图正常"); }),
+            CCAction.CCSpawn(
+                CCAction.CCBounceEaseIn(image.transform.CCMoveTo(duration * 0.5f, new Vector3(200, 0, 0))),
+                image2.transform.CCMoveTo(duration * 0.5f, new Vector3(200, -100, 0)),
+                CCActionDelay.Create(0f)
+            ),
+            CCActionDelay.Create(0.1f),
+            CCAction.CCSpawn(
+                CCAction.CCBounceEaseIn(image.transform.CCMoveTo(duration * 0.5f, new Vector3(0, 0, 0))),
+                image2.transform.CCMoveTo(duration * 0.5f, new Vector3(0, -100, 0)),
+                CCActionDelay.Create(0f)
+            ),
+
+            CCAction.CCDelay(0.1f, () => { SetTile("变速BounceOut 上图先快后慢，下图正常"); }),
+            CCAction.CCSpawn(
+                CCAction.CCBounceEaseOut(image.transform.CCMoveTo(duration * 0.5f, new Vector3(200, 0, 0))),
+                image2.transform.CCMoveTo(duration * 0.5f, new Vector3(200, -100, 0)),
+                CCActionDelay.Create(0f)
+            ),
+            CCActionDelay.Create(0.1f),
+            CCAction.CCSpawn(
+                CCAction.CCBounceEaseOut(image.transform.CCMoveTo(duration * 0.5f, new Vector3(0, 0, 0))),
+                image2.transform.CCMoveTo(duration * 0.5f, new Vector3(0, -100, 0)),
+                CCActionDelay.Create(0f)
+            ),
+
+            CCAction.CCDelay(0.5f, () => { SetTile("变速BounceInOut 上图前后慢中间快，下图正常"); }),
+            CCAction.CCSpawn(
+                CCAction.CCBounceEaseInOut(image.transform.CCMoveTo(duration * 0.5f, new Vector3(200, 0, 0))),
+                image2.transform.CCMoveTo(duration * 0.5f, new Vector3(200, -100, 0)),
+                CCActionDelay.Create(0f)
+            ),
+            CCActionDelay.Create(0.1f),
+            CCAction.CCSpawn(
+                CCAction.CCBounceEaseInOut(image.transform.CCMoveTo(duration * 0.5f, new Vector3(0, 0, 0))),
+                image2.transform.CCMoveTo(duration * 0.5f, new Vector3(0, -100, 0)),
+                CCActionDelay.Create(0f)
+            ),
+            CCAction.CCDelay(0, () => { SetTile("完成"); }),
+            CCActionDelay.Create(0f)
+        );
+        return action;
+    }
+
+    public ActionInterval OnClick18()
+    {
+        
+        var action = CCActionSequence.Create(
+            CCAction.CCDelay(0, () => { Reset(); SetTile("变速Back");}),
+            image2.gameObject.CCShow(),
+            CCAction.CCDelay(0, () => { SetTile("变速BackIn 上图先慢后快，下图正常"); }),
+            CCAction.CCSpawn(
+                CCAction.CCBackEaseIn(image.transform.CCMoveTo(duration * 0.5f * 0.5f, new Vector3(200, 0, 0))),
+                image2.transform.CCMoveTo(duration * 0.5f * 0.5f, new Vector3(200, -100, 0)),
+                CCActionDelay.Create(0f)
+            ),
+            CCActionDelay.Create(0.1f),
+            CCAction.CCSpawn(
+                CCAction.CCBackEaseIn(image.transform.CCMoveTo(duration * 0.5f * 0.5f, new Vector3(0, 0, 0))),
+                image2.transform.CCMoveTo(duration * 0.5f * 0.5f, new Vector3(0, -100, 0)),
+                CCActionDelay.Create(0f)
+            ),
+
+            CCAction.CCDelay(0.1f, () => { SetTile("变速BackOut 上图先快后慢，下图正常"); }),
+            CCAction.CCSpawn(
+                CCAction.CCBackEaseOut(image.transform.CCMoveTo(duration * 0.5f, new Vector3(200, 0, 0))),
+                image2.transform.CCMoveTo(duration * 0.5f, new Vector3(200, -100, 0)),
+                CCActionDelay.Create(0f)
+            ),
+            CCActionDelay.Create(0.1f),
+            CCAction.CCSpawn(
+                CCAction.CCBackEaseOut(image.transform.CCMoveTo(duration * 0.5f, new Vector3(0, 0, 0))),
+                image2.transform.CCMoveTo(duration * 0.5f, new Vector3(0, -100, 0)),
+                CCActionDelay.Create(0f)
+            ),
+
+            CCAction.CCDelay(0.1f, () => { SetTile("变速BackInOut 上图前后慢中间快，下图正常"); }),
+            CCAction.CCSpawn(
+                CCAction.CCBackEaseInOut(image.transform.CCMoveTo(duration * 0.5f, new Vector3(200, 0, 0))),
+                image2.transform.CCMoveTo(duration * 0.5f, new Vector3(200, -100, 0)),
+                CCActionDelay.Create(0f)
+            ),
+            CCActionDelay.Create(0.1f),
+            CCAction.CCSpawn(
+                CCAction.CCBackEaseInOut(image.transform.CCMoveTo(duration * 0.5f, new Vector3(0, 0, 0))),
+                image2.transform.CCMoveTo(duration * 0.5f, new Vector3(0, -100, 0)),
+                CCActionDelay.Create(0f)
+            ),
+            CCAction.CCDelay(0, () => { SetTile("完成"); }),
+            CCActionDelay.Create(0f)
+        );
+        return action;
 
     }
 
-    void OnClick18(Button button)
+    public ActionInterval OnClick19()
     {
-        SetTile("未完待续");
+        
+        var action1 = CCAction.CCSequence(
+            CCAction.CCDelay(0, () => { Reset(); SetTile("获得奖励效果");}),
 
+            image.transform.CCMoveTo(0, new Vector3(0, 200, 0)),
+            image.transform.CCMoveTo(duration*0.3f, new Vector3(0, 0, 0)),
+            CCActionDelay.Create(0f)
+        );
+        var action2 = CCAction.CCSequence(
+            image.transform.CCScaleTo(0, new Vector3(3, 3, 3)),
+            image.transform.CCScaleTo(duration*0.3f, new Vector3(0.5f, 0.5f, 0.5f)),
+            image.transform.CCScaleTo(duration*0.2f, new Vector3(1.3f, 1.3f, 1.3f)),
+            image.transform.CCScaleTo(duration* 0.15f, new Vector3(1, 1, 1)),
+            CCActionDelay.Create(0.2f),
+            CCActionDelay.Create(0f)
+        );
+        var action = CCActionSpawn.Create(action1, action2);
+
+        return CCAction.CCRepeat(action,3);
     }
 
-    void OnClick19(Button button)
+    public ActionInterval OnClick20()
     {
-        SetTile("未完待续");
-
+        var action1 = CCAction.CCSequence(
+            CCAction.CCDelay(0, () => { Reset(); SetTile("图一浮动、图二震动");}),
+            image2.gameObject.CCShow(),
+            CCAction.CCSineEaseIn(image.transform.CCMoveTo(duration*0.5f, new Vector3(0, 100, 0))),
+            CCAction.CCSineEaseOut(image.transform.CCMoveTo(duration * 0.5f, new Vector3(0, 0, 0))),
+            CCActionDelay.Create(0f)
+        );
+        var action2 = CCAction.CCSequence(
+            image2.transform.CCShake(duration, new Vector3(20, 20,0)),
+            image2.transform.CCMoveTo(0,new Vector3(0,-100,0)),
+            CCActionDelay.Create(0f)
+        );
+        var action = CCActionSpawn.Create(action1, action2);
+        return CCAction.CCRepeat(action,3);
     }
 
-    void OnClick20(Button button)
+    public void D()
     {
-        SetTile("未完待续");
-
+        var action = CCAction.CCSequence(
+            CCAction.CCDelay(0, () => { Debug.Log("HelloWorld"); }),    //回调
+            gameObject.CCShow(),                                        //显示
+            transform.CCMoveTo(1.0f, new Vector3(100, 100, 100)),       //移动
+            CCAction.CCSineEaseIn(image.transform.CCMoveTo(1.0f, new Vector3(0, 0, 0))),    //变速(In先慢后快) 移动
+            CCAction.CCSpawn(
+                transform.CCAnglesTo(1.0f, new Vector3(0, 0, 360)),
+                transform.CCScaleTo(0.8f, new Vector3(2, 2, 2))
+            ),// 并行执行 旋转和缩放，取最长时间作为结束时间
+            transform.CCScaleTo(1f, new Vector3(1, 1, 1)), //缩放
+            CCActionDelay.Create(0f)
+        );
+        CCAction.Do(action, transform, 3);  //执行Action，并且循环3次，小于0无限循环
     }
 }

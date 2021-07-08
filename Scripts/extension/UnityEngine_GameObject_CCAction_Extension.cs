@@ -1,4 +1,10 @@
-﻿using System;
+﻿//------------------------------------------------------------------------------
+//      Copyright (c) 2021 , ZensYue ZensYue@163.com
+//      All rights reserved.
+//      Use, modification and distribution are subject to the "MIT License"
+//------------------------------------------------------------------------------
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -15,7 +21,7 @@ namespace UnityEngine
         /// </summary>
         /// <param name="obj">GameObject</param>
         /// <returns></returns>
-        public static IFiniteTimeAction CCShow(this GameObject obj)
+        public static ActionInterval CCShow(this GameObject obj)
         {
             var action = CCActionExecute.Create(() => { obj.SetActive(true); });
             return action;
@@ -26,9 +32,21 @@ namespace UnityEngine
         /// </summary>
         /// <param name="obj">GameObject</param>
         /// <returns></returns>
-        public static IFiniteTimeAction CCHide(this GameObject obj)
+        public static ActionInterval CCHide(this GameObject obj)
         {
             var action = CCActionExecute.Create(() => { obj.SetActive(false); });
+            return action;
+        }
+
+        /// <summary>
+        /// 删除自己
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <param name="t"></param>
+        /// <returns></returns>
+        public static ActionInterval CCRemoveSelf(this GameObject obj, float t=0)
+        {
+            var action = CCActionExecute.Create(() => { GameObject.Destroy(obj, t); });
             return action;
         }
 
@@ -39,7 +57,7 @@ namespace UnityEngine
         /// <param name="duration">时间</param>
         /// <param name="time">闪烁次数</param>
         /// <returns></returns>
-        public static IFiniteTimeAction CCBlink(this GameObject obj,float duration,uint time)
+        public static ActionInterval CCBlink(this GameObject obj,float duration,uint time)
         {
             float oneTime = duration / time;
             var action = CCActionSequence.Create(

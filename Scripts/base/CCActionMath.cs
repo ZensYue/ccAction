@@ -1,4 +1,8 @@
-﻿
+﻿//------------------------------------------------------------------------------
+//      Copyright (c) 2021 , ZensYue ZensYue@163.com
+//      All rights reserved.
+//      Use, modification and distribution are subject to the "MIT License"
+//------------------------------------------------------------------------------
 
 using UnityEngine;
 

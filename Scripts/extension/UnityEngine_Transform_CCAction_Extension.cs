@@ -1,11 +1,17 @@
-﻿using System.Collections;
+﻿//------------------------------------------------------------------------------
+//      Copyright (c) 2021 , ZensYue ZensYue@163.com
+//      All rights reserved.
+//      Use, modification and distribution are subject to the "MIT License"
+//------------------------------------------------------------------------------
+
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using ccAction;
 
 namespace UnityEngine
 {
-    public static class UnityEngine_Transform_ccAction_Extension
+    public static class UnityEngine_Transform_CCAction_Extension
     {
         /// <summary>
         /// 缩放
@@ -14,7 +20,7 @@ namespace UnityEngine
         /// <param name="duration">时间</param>
         /// <param name="to">目标值</param>
         /// <returns></returns>
-        public static IFiniteTimeAction CCScaleTo(this Transform obj, float duration, Vector3 to)
+        public static ActionInterval CCScaleTo(this Transform obj, float duration, Vector3 to)
         {
             var action = CCActionVector3.Create(duration, obj.localScale, to);
             action.SetInitFunc(() => { return obj.localScale; });
@@ -29,7 +35,7 @@ namespace UnityEngine
         /// <param name="duration">时间</param>
         /// <param name="to">目标值</param>
         /// <returns></returns>
-        public static IFiniteTimeAction CCMoveTo(this Transform obj, float duration, Vector3 to,bool relativeWorld = false)
+        public static ActionInterval CCMoveTo(this Transform obj, float duration, Vector3 to,bool relativeWorld = false)
         {
             var action = CCActionVector3.Create(duration, relativeWorld ? obj.position:obj.localPosition, to);
             action.SetInitFunc(() => { return relativeWorld ? obj.position : obj.localPosition; });
@@ -47,7 +53,7 @@ namespace UnityEngine
         /// <param name="duration">时间</param>
         /// <param name="to">目标值</param>
         /// <returns></returns>
-        public static IFiniteTimeAction CCAnglesTo(this Transform obj, float duration, Vector3 to, bool relativeWorld = false)
+        public static ActionInterval CCAnglesTo(this Transform obj, float duration, Vector3 to, bool relativeWorld = false)
         {
             var action = CCActionVector3.Create(duration, relativeWorld ? obj.eulerAngles : obj.localEulerAngles, to);
             action.SetInitFunc(() => { return relativeWorld ? obj.eulerAngles : obj.localEulerAngles; });
@@ -65,7 +71,7 @@ namespace UnityEngine
         /// <param name="duration">时间</param>
         /// <param name="to">目标值</param>
         /// <returns></returns>
-        public static IFiniteTimeAction CCRotationTo(this Transform obj, float duration, Quaternion to, bool relativeWorld = false)
+        public static ActionInterval CCRotationTo(this Transform obj, float duration, Quaternion to, bool relativeWorld = false)
         {
             var action = CCActionQuaternion.Create(duration, relativeWorld ? obj.rotation : obj.localRotation, to);
             action.SetInitFunc(() => { return relativeWorld ? obj.rotation : obj.localRotation; });
@@ -80,11 +86,13 @@ namespace UnityEngine
         /// <summary>
         /// 二阶贝塞尔曲线运动
         /// </summary>
-        /// <param name="obj">Transform</param>
+        /// <param name="obj"></param>
         /// <param name="duration">时间</param>
-        /// <param name="to">目标值</param>
-        /// <returns></returns>
-        public static IFiniteTimeAction CCQuadBezierTo(this Transform obj, float duration, Vector3 c, Vector3 p2, bool relativeWorld = false)
+        /// <param name="c">控制点</param>
+        /// <param name="p2">目标点</param>
+        /// <param name="relativeWorld">是否是直接坐标</param>
+        /// <returns>ActionInterval</returns>
+        public static ActionInterval CCQuadBezierTo(this Transform obj, float duration, Vector3 c, Vector3 p2, bool relativeWorld = false)
         {
             Vector3 p1 = relativeWorld ? obj.position : obj.localPosition;
             var action = CCActionFloat.Create(duration, 0, 1);
@@ -103,7 +111,7 @@ namespace UnityEngine
         /// <param name="duration">时间</param>
         /// <param name="to">目标值</param>
         /// <returns></returns>
-        public static IFiniteTimeAction CCCubicBezierTo(this Transform obj, float duration, Vector3 c1, Vector3 c2, Vector3 p2, bool relativeWorld = false)
+        public static ActionInterval CCCubicBezierTo(this Transform obj, float duration, Vector3 c1, Vector3 c2, Vector3 p2, bool relativeWorld = false)
         {
             Vector3 p1 = relativeWorld ? obj.position : obj.localPosition;
             var action = CCActionFloat.Create(duration, 0, 1);
@@ -125,7 +133,7 @@ namespace UnityEngine
         /// <param name="p2">目标</param>
         /// <param name="relativeWorld">是否是世界坐标</param>
         /// <returns></returns>
-        public static IFiniteTimeAction CCCatmullRoomTo(this Transform obj, float duration, Vector3 c1, Vector3 c2, Vector3 p2, bool relativeWorld = false)
+        public static ActionInterval CCCatmullRoomTo(this Transform obj, float duration, Vector3 c1, Vector3 c2, Vector3 p2, bool relativeWorld = false)
         {
             Vector3 p1 = relativeWorld ? obj.position : obj.localPosition;
             var action = CCActionFloat.Create(duration, 0, 1);
@@ -137,6 +145,28 @@ namespace UnityEngine
             return action;
         }
 
+        /// <summary>
+        /// 震动
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <param name="duration">时间</param>
+        /// <param name="magnitude">震动系数</param>
+        /// <param name="relativeWorld">是否是直接坐标</param>
+        /// <returns>ActionInterval</returns>
+        public static ActionInterval CCShake(this Transform obj, float duration, Vector3 magnitude, bool relativeWorld = false)
+        {
+            Vector3 curpos = relativeWorld ? obj.position : obj.localPosition;
+            var action = CCActionFloat.Create(duration, 0, 1);
+            action.SetInitFunc(() => {
+                return 0;
+            });
+            action.SetUpdate((t, result) => {
+                var pos = CCActionMath.Shake(magnitude, curpos, result);
+                if (relativeWorld) obj.position = pos;
+                else obj.localPosition = pos;
+            });
+            return action;
+        }
 
         /// <summary>
 		/// 椭圆运动 
@@ -149,8 +179,8 @@ namespace UnityEngine
 		/// <param name="a">向量A长度</param>
 		/// <param name="b">向量B长度</param>
 		/// <param name="t"></param>
-		/// <returns>IFiniteTimeAction</returns>
-        public static IFiniteTimeAction CCEllipse(this Transform obj, float duration, Vector3 centerPos, Vector3 vecA, Vector3 vecB, float a, float b,float startp=0,float endp = 1, bool relativeWorld = false)
+		/// <returns>ActionInterval</returns>
+        public static ActionInterval CCEllipse(this Transform obj, float duration, Vector3 centerPos, Vector3 vecA, Vector3 vecB, float a, float b,float startp=0,float endp = 1, bool relativeWorld = false)
         {
 #if UNITY_EDITOR
             if(vecA == Vector3.zero) 
@@ -185,8 +215,8 @@ namespace UnityEngine
 		/// <param name="a">向量A长度 x轴</param>
 		/// <param name="b">向量B长度 y轴</param>
 		/// <param name="t"></param>
-		/// <returns>IFiniteTimeAction</returns>
-        public static IFiniteTimeAction CCEllipse2D(this Transform obj, float duration, Vector2 centerPos, float a, float b, float startp = 0, float endp = 1, bool relativeWorld = false)
+		/// <returns>ActionInterval</returns>
+        public static ActionInterval CCEllipse2D(this Transform obj, float duration, Vector2 centerPos, float a, float b, float startp = 0, float endp = 1, bool relativeWorld = false)
         {
             return obj.CCEllipse(duration, centerPos, new Vector3(1,0,0), new Vector3(0,1,0), a, b, startp, endp, relativeWorld);
         }

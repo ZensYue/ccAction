@@ -1,11 +1,17 @@
-﻿using System.Collections;
+﻿//------------------------------------------------------------------------------
+//      Copyright (c) 2021 , ZensYue ZensYue@163.com
+//      All rights reserved.
+//      Use, modification and distribution are subject to the "MIT License"
+//------------------------------------------------------------------------------
+
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 
 namespace ccAction
 {
-    public static class TweenFunc
+    public static class CCEaseFunc
     {
         const float M_PI = 3.14159265358f;
         const float M_PI_X_2 = M_PI * 2;
@@ -283,7 +289,7 @@ namespace ccAction
 
 
         // Bounce Ease
-        public static float BounceTime(float time)
+        static float BounceTime(float time)
         {
             if (time < 1 / 2.75)
             {
@@ -330,16 +336,7 @@ namespace ccAction
         }
 
 
-        // Custom Ease
-        public static float CustomEase(float time, float[] easingParam)
-        {
-            if (easingParam.Length==8)
-            {
-                float tt = 1 - time;
-                return easingParam[1] * tt * tt * tt + 3 * easingParam[3] * time * tt * tt + 3 * easingParam[5] * time * time * tt + easingParam[7] * time * time * time;
-            }
-            return time;
-        }
+        
 
         public static float EaseIn(float time, float rate)
         {
@@ -391,7 +388,14 @@ namespace ccAction
             return resultTime;
         }
 
-        public static float BezieratFunction(float a, float b, float c, float d, float t)
+        // Custom Ease
+        public static float CustomEase(float time, float a, float b, float c, float d)
+        {
+            float tt = 1 - time;
+            return a * tt * tt * tt + 3 * b * time * tt * tt + 3 * c * time * time * tt + d * time * time * time;
+        }
+
+        public static float BezieratEase(float t,float a, float b, float c, float d)
         {
             return (powf(1 - t, 3) * a + 3 * t * (powf(1 - t, 2)) * b + 3 * powf(t, 2) * (1 - t) * c + powf(t, 3) * d);
         }

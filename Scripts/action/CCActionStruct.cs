@@ -1,4 +1,10 @@
-﻿using System;
+﻿//------------------------------------------------------------------------------
+//      Copyright (c) 2021 , ZensYue ZensYue@163.com
+//      All rights reserved.
+//      Use, modification and distribution are subject to the "MIT License"
+//------------------------------------------------------------------------------
+
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -8,7 +14,7 @@ namespace ccAction
     public abstract class CCActionStruct<T>: ActionInterval where T:struct
     {
         protected T m_from;
-        //protected T m_delta;
+        protected T m_delta;
         protected T m_to;
         protected T m_previous;
 
@@ -44,6 +50,7 @@ namespace ccAction
             if (m_initFunc != null)
                 m_from = m_initFunc();
             m_previous = m_from;
+            m_delta = CalDelta();
         }
 
         public override void Update(float t)
@@ -52,6 +59,7 @@ namespace ccAction
             m_UpdateFunc?.Invoke(t, result);
         }
 
+        protected abstract T CalDelta();
         protected abstract T UpdateResultValue(float t);
     }
 
@@ -66,9 +74,15 @@ namespace ccAction
             ret.InitWithDuration(d, from, to);
             return ret;
         }
+
+        protected override float CalDelta()
+        {
+            return m_to - m_from;
+        }
         protected override float UpdateResultValue(float t)
         {
-            return Mathf.Lerp(m_from, m_to, t);
+            //return Mathf.Lerp(m_from, m_to, t);
+            return m_from + m_delta * t;
         }
     }
 
@@ -83,9 +97,14 @@ namespace ccAction
             ret.InitWithDuration(d, from, to);
             return ret;
         }
+        protected override Vector2 CalDelta()
+        {
+            return m_to - m_from;
+        }
         protected override Vector2 UpdateResultValue(float t)
         {
-            return Vector2.Lerp(m_from, m_to, t);
+            //return Vector2.Lerp(m_from, m_to, t);
+            return m_from + m_delta * t;
         }
     }
 
@@ -100,9 +119,14 @@ namespace ccAction
             ret.InitWithDuration(d, from, to);
             return ret;
         }
+        protected override Vector3 CalDelta()
+        {
+            return m_to - m_from;
+        }
         protected override Vector3 UpdateResultValue(float t)
         {
-            return Vector3.Lerp(m_from, m_to, t);
+            //return Vector3.Lerp(m_from, m_to, t);
+            return m_from + m_delta * t;
         }
     }
 
@@ -117,9 +141,14 @@ namespace ccAction
             ret.InitWithDuration(d, from, to);
             return ret;
         }
+        protected override Vector4 CalDelta()
+        {
+            return m_to - m_from;
+        }
         protected override Vector4 UpdateResultValue(float t)
         {
-            return Vector4.Lerp(m_from, m_to, t);
+            //return Vector4.Lerp(m_from, m_to, t);
+            return m_from + m_delta * t;
         }
     }
 
@@ -134,10 +163,16 @@ namespace ccAction
             ret.InitWithDuration(d, from, to);
             return ret;
         }
+        protected override Color CalDelta()
+        {
+            return m_to - m_from;
+        }
         protected override Color UpdateResultValue(float t)
         {
-            return Color.Lerp(m_from, m_to, t);
+            //return Color.Lerp(m_from, m_to, t);
+            return m_from + m_delta * t;
         }
+
     }
 
     /// <summary>
@@ -151,9 +186,15 @@ namespace ccAction
             ret.InitWithDuration(d, from, to);
             return ret;
         }
+
+        protected override Quaternion CalDelta()
+        {
+            return m_from;
+        }
         protected override Quaternion UpdateResultValue(float t)
         {
             return Quaternion.Lerp(m_from, m_to, t);
+            //return m_from + m_delta * t;
         }
     }
 }

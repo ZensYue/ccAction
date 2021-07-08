@@ -11,6 +11,6 @@ public class GameMgr : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
-		CCActionManager.Instance.Update(Time.deltaTime);
+		CCAction.Update(Time.deltaTime);
 	}
 }

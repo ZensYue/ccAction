@@ -1,4 +1,10 @@
-﻿//#define CC_ACTION_TYPE_MONO
+﻿//------------------------------------------------------------------------------
+//      Copyright (c) 2021 , ZensYue ZensYue@163.com
+//      All rights reserved.
+//      Use, modification and distribution are subject to the "MIT License"
+//------------------------------------------------------------------------------
+
+//#define CC_ACTION_TYPE_MONO
 
 using System;
 using System.Collections;
@@ -86,7 +92,7 @@ namespace ccAction
 			Profiler.EndSample();
 		}
 #endif
-		public int AddAction(IAction action,Transform target)
+		public int AddAction(IAction action, ActionObject target)
         {
 			if (target == null)
             {
