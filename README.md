@@ -76,3 +76,9 @@ CCAction.Kill(transform); 	//移除transform(CCAction.Do(action, transform)同�
 
 # TODO
 1. 添加编辑器运行时Debug
+
+
+
+## 推荐
+
+1. [MotionFramework](https://github.com/gmhevinci/MotionFramework) 开箱即用的轻量框架。
