@@ -65,7 +65,7 @@ CCAction.Kill(transform); 	//移除transform(CCAction.Do(action, transform)同�
 
 ## 截图
 
-加载场景***ccAction/sample/SampleScene***运行截图
+加载场景***ccAction/sample/SampleScene.unity***，运行截图
 
 ![image](https://github.com/ZensYue/ccAction/blob/master/Doc/Image/ActionTest.jpg)
 
