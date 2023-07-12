@@ -13,7 +13,7 @@ namespace ccAction
 {
     /// <summary>
     /// Ease actions are created from other interval actions.The ease action will change the timeline of the inner action.
-    /// 变速 In先快后慢，Out先快后慢 InOut前后慢，中间快 (如有第二参数，第二参数需要大于1满足此规律，否则相反)
+    /// 变速 In先快后慢，Out先慢后快 InOut前后慢，中间快 (如有第二参数，第二参数需要大于1满足此规律，否则相反)
     /// </summary>
     #region ActionEase
     public class CCActionEase : ActionInterval

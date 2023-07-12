@@ -14,8 +14,8 @@ namespace ccAction
 	/// <summary>
 	/// 为了避免和System.Action冲突，这里把名字改成CCAction
 	/// </summary>
-	public abstract class IAction
-	{
+	public abstract class IAction: IEnumerator
+    {
 		protected static int Tag = 0;
 
         protected int m_tag;
@@ -40,7 +40,7 @@ namespace ccAction
 		/// </summary>
 		public int GroupID { get; set; } = 0;
 
-		public IAction()
+        public IAction()
 		{
 			Tag++;
 			m_tag = Tag;
@@ -80,7 +80,21 @@ namespace ccAction
 		{
 			return null;
 		}
-	}
+
+		object IEnumerator.Current
+        {
+			get { return null; }
+		}
+
+        bool IEnumerator.MoveNext()
+        {
+            return !IsDone();
+        }
+
+        void IEnumerator.Reset()
+        {
+        }
+    }
 
 	/// <summary>
 	/// 基础Action

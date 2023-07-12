@@ -485,7 +485,7 @@ namespace ccAction
         {
             return CCActionEase.Create(action).SetEase(CCEaseFunc.QuadraticIn);
         }
-        public static ActionInterval CCEaseOut(ActionInterval action)
+        public static ActionInterval CCQuadraticOut(ActionInterval action)
         {
             return CCActionEase.Create(action).SetEase(CCEaseFunc.QuadraticOut);
         }
@@ -541,7 +541,7 @@ namespace ccAction
         #endregion
 
         #region 添加移除
-        static int Do(ActionInterval action, ActionObject obj)
+        public static int Do(ActionInterval action, ActionObject obj)
         {
             return CCActionManager.Instance.AddAction(action, obj);
         }
@@ -552,7 +552,7 @@ namespace ccAction
         /// <param name="obj">对象主体，可用于安全删除</param>
         /// <param name="repeatTime">重复次数，0或1不重复，小于0无限重复，大于1按照次数重复</param>
         /// <returns></returns>
-        public static int Do(ActionInterval action, ActionObject obj,int repeatTime = 0)
+        public static int Do(ActionInterval action, ActionObject obj,int repeatTime)
         {
             if(repeatTime == 0 || repeatTime == 1)
             {

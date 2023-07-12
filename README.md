@@ -22,19 +22,12 @@ cocos2dx action 移植到unity。另外参考[MotionFramework](https://github.co
 
 ## 说明
 
-1. 启动**CCActionManager**。
-
-```c#
-// 在Update调用
-CCAction.Update(Time.deltaTime);
-```
-
-2. 添加新的缓动
+1. 添加新的缓动
 
 ```c#
 var action = CCAction.CCSequence(
 			CCaction.CCCall(() => { Debug.Log("HelloWorld");)			//回调
-    		CCAction.CCDelay(0.5f }),									//间隔0.5秒
+			CCAction.CCDelay(0.5f }),									//间隔0.5秒
             CCAction.CCDelay(0.5f, () => { Debug.Log("HelloWorld"); }), //间隔0.5f秒，并且回调
             gameObject.CCShow(),                                        //显示
             transform.CCMoveTo(1.0f, new Vector3(100, 100, 100)),       //移动
@@ -50,18 +43,24 @@ CCAction.Do(action, transform);  //执行Action
 // CCAction.Do(action, transform, -1);  //执行Action，小于0无限循环
 ```
 
-3. 停止缓动
+2. 停止缓动
 
 ```c#
 CCAction.Kill(transform); 	//移除transform(CCAction.Do(action, transform)同一个)所有的Action
 ```
 
-4. 热更导出和扩展
+3. 热更导出和扩展
 
 - 热更导出，只需要导出**ActionInterval.cs**和**CCAction.cs**即可
 - 扩展，把扩展的方法添加至**extension目录**，并在**CCAction.cs**添加对应的方法，方便统一导出。
 
+4. 协程支持
+```c#
+CCAction.Do(action, transform);
+yield return action;
+```
 
+5. UniTask支持(TODO)
 
 ## 截图
 

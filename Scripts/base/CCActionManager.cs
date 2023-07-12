@@ -46,6 +46,8 @@ namespace ccAction
 		/// </summary>
 		private Dictionary<int, m_hashElement> m_targets = new Dictionary<int, m_hashElement>();
 		private List<int> m_deletes = new List<int>();
+		private List<m_hashElement> m_adds = new List<m_hashElement>();
+		private bool m_running = false;
 
 		m_hashElement m_currentTarget;
 
@@ -117,12 +119,19 @@ namespace ccAction
 					target = actionObject,
 					safeMode = actionObject != null,
 				};
-				m_targets.Add(groupId, element);
+				if(m_running)
+					m_adds.Add((element));
+				else
+					m_targets.Add(groupId, element);
 			}
 			action.GroupID = groupId;
 			action.StartWithTarget();
 			element.actions.Add(action);
-			return groupId;
+
+			if (m_running && m_deletes.Contains(groupId))
+				m_deletes.Remove(groupId);
+
+            return groupId;
 		}
 
 
@@ -160,10 +169,35 @@ namespace ccAction
 					if (element == m_currentTarget)
 						m_currentTargetSalvaged = true;
 					else
-						m_targets.Remove(action.GroupID);
+                    {
+                        if (m_running)
+                        {
+							if (!m_deletes.Contains(action.GroupID))
+                                m_deletes.Add(action.GroupID);
+                        }
+                        else
+                        {
+                            m_targets.Remove(action.GroupID);
+                        }
+						//m_targets.Remove(action.GroupID);
+					}
+					RemoveWaitAddList(action.GroupID);
 				}
 			}
 		}
+
+		private void RemoveWaitAddList(int GroupID)
+		{
+			foreach (var target in m_adds)
+			{
+				if (GroupID == target.groupId)
+				{
+					m_adds.Remove(target);
+					break;
+				}
+			}
+		}
+		
 		public void RemoveAllActionsFromTarget(ActionObject target)
         {
 			RemoveAllActionsFromTarget(target.GetInstanceID());
@@ -182,18 +216,36 @@ namespace ccAction
 				if (m_currentTarget == element)
 					m_currentTargetSalvaged = true;
 				else
-					m_targets.Remove(groupId);
+				{
+					if (m_running)
+					{
+						if(!m_deletes.Contains(groupId))
+							m_deletes.Add(groupId);
+					}
+					else
+					{
+						m_targets.Remove(groupId);
+					}
+					
+				}
 			}
+			RemoveWaitAddList(groupId);
 		}
 
 		private void OnUpdate(float dt)
 		{
 			m_deletes.Clear();
+			m_adds.Clear();
+			m_running = true;
 			foreach (var item in m_targets)
 			{ 
+				if(m_deletes.Contains(item.Key))
+					continue;
 				if(item.Value.safeMode && item.Value.target.Equals(null))
 				{
-					m_targets.Remove(item.Key);
+					// m_targets.Remove(item.Key);
+					if(!m_deletes.Contains(item.Key))
+						m_deletes.Add(item.Key);
 					continue;
 				}
 				m_currentTarget = item.Value;
@@ -231,13 +283,24 @@ namespace ccAction
 						m_currentTarget.actionIndex++;
 					}
 				}
+
 				if (m_currentTargetSalvaged && m_currentTarget.actions.Count == 0)
-					m_deletes.Add(item.Key);
+				{
+					if(!m_deletes.Contains(item.Key))
+						m_deletes.Add(item.Key);
+				}
 			}
 
+			m_running = false;
 			foreach (var target in m_deletes)
 			{
 				m_targets.Remove(target);
+			}
+
+			foreach (var target in m_adds)
+			{
+				if(!m_targets.ContainsKey(target.groupId))
+					m_targets.Add(target.groupId,target);
 			}
 		}
 	}
